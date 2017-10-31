@@ -20,19 +20,19 @@ var campgroundSchema = new mongoose.Schema({
 
 var Campground = mongoose.model('Campground', campgroundSchema);
 
-Campground.create(
-  {
-    name: "Mount Hood", 
-    image: "https://images.unsplash.com/photo-1431512284068-4c4002298068?w=2552&ixid=dW5zcGxhc2guY29tOzs7Ozs%3D",
-    description: "This place is awesome. They filmed the outside of the shining at the hotel. On a good day you can see the Three Sisters."
-  }, function(err, campground) {
-      if(err) {
-        console.log(err);
-      } else {
-        console.log("Campground got saved to DB");
-        console.log(campground);
-      }
-  });
+// Campground.create(
+//   {
+//     name: "Mount Hood", 
+//     image: "https://images.unsplash.com/photo-1431512284068-4c4002298068?w=2552&ixid=dW5zcGxhc2guY29tOzs7Ozs%3D",
+//     description: "This place is awesome. They filmed the outside of the shining at the hotel. On a good day you can see the Three Sisters."
+//   }, function(err, campground) {
+//       if(err) {
+//         console.log(err);
+//       } else {
+//         console.log("Campground got saved to DB");
+//         console.log(campground);
+//       }
+//   });
 
 app.get('/', function(req, res) {
   res.render('landing');
@@ -44,7 +44,7 @@ app.get('/campgrounds', function(req, res) {
     if(err) {
       console.log(err);
     } else {
-        res.render('campgrounds', { campgrounds: allCampgrounds });
+        res.render('index', { campgrounds: allCampgrounds });
     }
   });
 });
@@ -53,7 +53,8 @@ app.get('/campgrounds', function(req, res) {
 app.post('/campgrounds', function(req, res) {
   var campground = req.body.campground;
   var image = req.body.image;
-  var newCampground = { name: campground, image: image };
+  var description = req.body.description;
+  var newCampground = { name: campground, image: image, description: description };
   
   // campgrounds.push(newCampground);
   Campground.create(newCampground, function(err, newlyCreated) {
@@ -72,7 +73,13 @@ app.get('/campgrounds/new', function(req, res) {
 
 // SHOW - Show info. about one specific campground
 app.get('/campgrounds/:id', function(req, res) {
-  res.send("Awesome");
+  Campground.findById(req.params.id, function(err, foundCampground) {
+    if(err) {
+      console.log('Error');
+    } else {
+        res.render('show', { campground: foundCampground });
+    }
+  });
 });
 
 app.listen(process.env.PORT, process.env.IP, function() {
