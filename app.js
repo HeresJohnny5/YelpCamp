@@ -1,7 +1,7 @@
-var express = require('express');
-var app = express();
-var bodyParser = require('body-parser');
-var mongoose = require('mongoose');
+var express = require('express'),
+      app = express(),
+      bodyParser = require('body-parser'),
+      mongoose = require('mongoose')
 
 mongoose.Promise = global.Promise;
 mongoose.connect("mongodb://localhost/yelp_camp", {useMongoClient: true});
@@ -14,15 +14,31 @@ app.set('view engine', 'ejs');
 // SCHEMA SETUP
 var campgroundSchema = new mongoose.Schema({
   name: String,
-  image: String
+  image: String,
+  description: String
 });
 
 var Campground = mongoose.model('Campground', campgroundSchema);
 
+Campground.create(
+  {
+    name: "Mount Hood", 
+    image: "https://images.unsplash.com/photo-1431512284068-4c4002298068?w=2552&ixid=dW5zcGxhc2guY29tOzs7Ozs%3D",
+    description: "This place is awesome. They filmed the outside of the shining at the hotel. On a good day you can see the Three Sisters."
+  }, function(err, campground) {
+      if(err) {
+        console.log(err);
+      } else {
+        console.log("Campground got saved to DB");
+        console.log(campground);
+      }
+  });
+
 app.get('/', function(req, res) {
-	res.render('landing');
+  res.render('landing');
 });
 
+// INDEX Route - Show all campgrounds
 app.get('/campgrounds', function(req, res) {
   Campground.find({}, function(err, allCampgrounds) {
     if(err) {
@@ -33,6 +49,7 @@ app.get('/campgrounds', function(req, res) {
   });
 });
 
+// CREATE Route - Add new campground to DB
 app.post('/campgrounds', function(req, res) {
   var campground = req.body.campground;
   var image = req.body.image;
@@ -48,10 +65,16 @@ app.post('/campgrounds', function(req, res) {
   });
 });
 
+// CREATE - Show form to create new campground
 app.get('/campgrounds/new', function(req, res) {
-    res.render('new');
+  res.render('new');
 });
 
-app.listen(3000, function () {
+// SHOW - Show info. about one specific campground
+app.get('/campgrounds/:id', function(req, res) {
+  res.send("Awesome");
+});
+
+app.listen(process.env.PORT, process.env.IP, function() {
   console.log("YelpCamp server has started!");
 });
