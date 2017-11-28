@@ -2,7 +2,9 @@ var express = require('express'),
       app = express(),
       bodyParser = require('body-parser'),
       mongoose = require('mongoose'),
-			Campground = require('./models/campground')
+      Campground = require('./models/campground'),
+      Comment = require('./models/comment'),
+      seedDB = require('./seeds');
 
 mongoose.Promise = global.Promise;
 mongoose.connect("mongodb://localhost/yelp_camp", {useMongoClient: true});
@@ -12,19 +14,7 @@ app.use(bodyParser.urlencoded({extended: true}));
 app.use(express.static('public'));
 app.set('view engine', 'ejs');
 
-// Campground.create(
-//   {
-//     name: "Mount Hood", 
-//     image: "https://images.unsplash.com/photo-1431512284068-4c4002298068?w=2552&ixid=dW5zcGxhc2guY29tOzs7Ozs%3D",
-//     description: "This place is awesome. They filmed the outside of the shining at the hotel. On a good day you can see the Three Sisters."
-//   }, function(err, campground) {
-//       if(err) {
-//         console.log(err);
-//       } else {
-//         console.log("Campground got saved to DB");
-//         console.log(campground);
-//       }
-//   });
+seedDB();
 
 app.get('/', function(req, res) {
   res.render('landing');
@@ -36,9 +26,14 @@ app.get('/campgrounds', function(req, res) {
     if(err) {
       console.log(err);
     } else {
-        res.render('index', { campgrounds: allCampgrounds });
+        res.render('campgrounds/index', { campgrounds: allCampgrounds });
     }
   });
+});
+
+// NEW - Show form to create new campground
+app.get('/campgrounds/new', function(req, res) {
+  res.render('campgrounds/new');
 });
 
 // CREATE Route - Add new campground to DB
@@ -58,18 +53,50 @@ app.post('/campgrounds', function(req, res) {
   });
 });
 
-// CREATE - Show form to create new campground
-app.get('/campgrounds/new', function(req, res) {
-  res.render('new');
-});
-
 // SHOW - Show info. about one specific campground
 app.get('/campgrounds/:id', function(req, res) {
-  Campground.findById(req.params.id, function(err, foundCampground) {
+  Campground.findById(req.params.id).populate('comments').exec(function(err, foundCampground) {
     if(err) {
       console.log('Error');
     } else {
-        res.render('show', { campground: foundCampground });
+        res.render('campgrounds/show', { campground: foundCampground });
+    }
+  });
+});
+
+// COMMENT/NEW - Dependent on SHOW 
+app.get('/campgrounds/:id/comments/new', function(req, res) {
+  var id = req.params.id;
+  
+  Campground.findById(id, function(err, campground) {
+    if(err) {
+      console.log(err);
+    } else {
+      res.render('comments/new', { campground: campground }); 
+    }
+  });
+    
+});
+
+// COMMENT/POST - Dependent on SHOW
+app.post('/campgrounds/:id/comments', function(req, res) {
+  var newComment = req.body.comment;
+  var id = req.params.id;
+  
+  Campground.findById(id, function(err, campground) {
+    if(err) {
+      console.log(err);
+      res.redirect('/campgrounds');
+    } else {
+      Comment.create(newComment, function(err, comment) {
+        if(err) {
+          console.log(err);
+        } else {
+          campground.comments.push(comment);
+          campground.save();
+          res.redirect('/campgrounds/' + id);
+        }
+      });
     }
   });
 });
